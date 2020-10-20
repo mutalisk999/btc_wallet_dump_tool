@@ -1,0 +1,4 @@
+pycrypto==2.6.1
+bsddb3==6.2.7
+ecdsa==0.16.0
+flask==1.1.2
