@@ -1,4 +1,5 @@
-pycrypto==2.6.1
-bsddb3==6.2.7
+pycryptodome==3.13.0
+bsddb3==6.2.9
 ecdsa==0.16.0
 flask==1.1.2
+base58==2.1.1

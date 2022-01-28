@@ -148,11 +148,15 @@ def dump_private_key_from_wallet_db(file_name, wallet_pass):
                 break
 
         # get user related key
-        for addr in all_user_addresses_in_wallet:
-            if addr in all_unencrypted_keys_in_wallet.keys():
-                all_user_unencrypted_keys_in_wallet[addr] = all_unencrypted_keys_in_wallet[addr]
-            if addr in all_encrypted_keys_in_wallet.keys():
-                all_user_encrypted_keys_in_wallet[addr] = all_encrypted_keys_in_wallet[addr]
+        # for addr in all_user_addresses_in_wallet:
+        #     if addr in all_unencrypted_keys_in_wallet.keys():
+        #         all_user_unencrypted_keys_in_wallet[addr] = all_unencrypted_keys_in_wallet[addr]
+        #     if addr in all_encrypted_keys_in_wallet.keys():
+        #         all_user_encrypted_keys_in_wallet[addr] = all_encrypted_keys_in_wallet[addr]
+        for addr in all_unencrypted_keys_in_wallet.keys():
+            all_user_unencrypted_keys_in_wallet[addr] = all_unencrypted_keys_in_wallet[addr]
+        for addr in all_encrypted_keys_in_wallet.keys():
+            all_user_encrypted_keys_in_wallet[addr] = all_encrypted_keys_in_wallet[addr]
 
         if wallet_encrypted:
             # get latest unencrypted mkey
