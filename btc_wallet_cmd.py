@@ -25,6 +25,8 @@ def main():
                 if "wallet_key" in res_obj:
                     for k, v in res_obj.get("wallet_key").items():
                         print(k, v)
+                else:
+                    print(res_obj.get("err_msg"))
                 break
     except Exception as err:
         print(err)

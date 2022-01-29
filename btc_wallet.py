@@ -13,6 +13,12 @@ from btc_crypto import EVP_BytesToKey, openssl_enc_decrypt
 from btc_db import open_wallet_db, get_wallet_db_cursor, close_wallet_db
 from btc_types import CMasterKey
 
+import base58
+import utils
+
+OP_0 = chr(0)
+SCRIPT_PREFIX = chr(5)
+
 
 class BizException(Exception):
     pass
@@ -82,6 +88,24 @@ def read_cmasterkey_from_valuedata(valuedata):
     return masterKey
 
 
+def witness_pubkey_to_p2sh_address(pubkey):
+    assert (type(pubkey) == bytes)
+    assert (len(pubkey) == 33)
+    
+    pubkey = pubkey.decode('iso-8859-15')
+    d20 = utils.hash160(pubkey.encode('iso-8859-15')).decode('iso-8859-15')
+    witness_script = OP_0 + chr(len(d20)) + d20
+
+    script_prefix = SCRIPT_PREFIX
+    
+    h20 = utils.hash160(witness_script.encode('iso-8859-15')).decode('iso-8859-15')
+    d21 = script_prefix + h20
+    c4 = utils.checksum(d21.encode('iso-8859-15')).decode('iso-8859-15')
+
+    d25 = d21 + c4
+    return base58.b58encode(d25.encode('iso-8859-15'))
+
+
 def dump_private_key_from_wallet_db(file_name, wallet_pass):
     try:
         if type(wallet_pass) is str:
@@ -117,20 +141,24 @@ def dump_private_key_from_wallet_db(file_name, wallet_pass):
             elif keyType == b"key":
                 pubkeyBytes = read_pubkey_from_keydata(ssKey)
                 addressStr = get_compressed_address(pubkeyBytes)
+                segAddressStr = witness_pubkey_to_p2sh_address(pubkeyBytes)
 
                 # get unencrypted private key
                 privkeyBytes = read_privkey_from_valuedata(ssValue)
                 all_unencrypted_keys_in_wallet[addressStr] = privkeyBytes
+                all_unencrypted_keys_in_wallet[segAddressStr] = privkeyBytes
 
             # encrypted wallet
             elif keyType == b"ckey":
                 wallet_encrypted = True
                 pubkey = read_pubkey_from_keydata(ssKey)
                 addressStr = get_compressed_address(pubkey)
+                segAddressStr = witness_pubkey_to_p2sh_address(pubkey)
 
                 # get encrypted private key
                 encrypted_privkey = read_encrypted_privkey_from_valuedata(ssValue)
                 all_encrypted_keys_in_wallet[addressStr] = (pubkey, encrypted_privkey)
+                all_encrypted_keys_in_wallet[segAddressStr] = (pubkey, encrypted_privkey)
 
             elif keyType == b"mkey":
                 mKeyId = read_keyid_from_keydata(ssKey)
@@ -148,15 +176,11 @@ def dump_private_key_from_wallet_db(file_name, wallet_pass):
                 break
 
         # get user related key
-        # for addr in all_user_addresses_in_wallet:
-        #     if addr in all_unencrypted_keys_in_wallet.keys():
-        #         all_user_unencrypted_keys_in_wallet[addr] = all_unencrypted_keys_in_wallet[addr]
-        #     if addr in all_encrypted_keys_in_wallet.keys():
-        #         all_user_encrypted_keys_in_wallet[addr] = all_encrypted_keys_in_wallet[addr]
-        for addr in all_unencrypted_keys_in_wallet.keys():
-            all_user_unencrypted_keys_in_wallet[addr] = all_unencrypted_keys_in_wallet[addr]
-        for addr in all_encrypted_keys_in_wallet.keys():
-            all_user_encrypted_keys_in_wallet[addr] = all_encrypted_keys_in_wallet[addr]
+        for addr in all_user_addresses_in_wallet:
+            if addr in all_unencrypted_keys_in_wallet.keys():
+                all_user_unencrypted_keys_in_wallet[addr] = all_unencrypted_keys_in_wallet[addr]
+            if addr in all_encrypted_keys_in_wallet.keys():
+                all_user_encrypted_keys_in_wallet[addr] = all_encrypted_keys_in_wallet[addr]
 
         if wallet_encrypted:
             # get latest unencrypted mkey
@@ -183,7 +207,8 @@ def dump_private_key_from_wallet_db(file_name, wallet_pass):
             pubkeyUncompressBytes = pubkey.to_string()
             pubkeyCompressBytes = get_compressed_pubkey(pubkeyUncompressBytes)
             addressStr2 = get_compressed_address(pubkeyCompressBytes)
-            if addressStr != addressStr2:
+            addressStr3 = witness_pubkey_to_p2sh_address(pubkeyCompressBytes)
+            if addressStr != addressStr2 and addressStr != addressStr3:
                 raise BizException("invalid private key in wallet file or use invalid wallet passphrase")
             wifKey = get_compressed_wif_key(decrypted_privkey)
             user_wifkey_map[bytes.decode(addressStr, "ascii")] = bytes.decode(wifKey, "ascii")

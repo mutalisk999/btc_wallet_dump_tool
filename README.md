@@ -29,8 +29,8 @@ whl for win: https://www.lfd.uci.edu/~gohlke/pythonlibs/
 * Use in a command line (strongly recommend)
 
 ```
-    python3 btc_wallet_cmd.py --dat-file=[path of btc wallet data file] --pass=[wallet pass]
+    python btc_wallet_cmd.py --dat-file=[path of btc wallet data file] --pass=[wallet pass]
     
     # example:
-    python3 btc_wallet_cmd.py --dat-file=C:\\btc_data\\wallet.dat --pass=12345678
+    python btc_wallet_cmd.py --dat-file=C:\\btc_data\\wallet.dat --pass=12345678
 ```
